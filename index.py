@@ -59,13 +59,17 @@ class SP1D3RXD:
         self.found_aps = {}
         
         def packet_handler(pkt):
-            if pkt.haslayer(Dot11Beacon):
-                bssid = pkt[Dot11].addr2
-                ssid = pkt[Dot11Elt].info.decode(errors='ignore')
-                if ssid and bssid not in self.found_aps:
-                    self.found_aps[bssid] = ssid
-                    channel = pkt[Dot11Elt][2].channel if pkt.haslayer(Dot11Elt) and len(pkt[Dot11Elt]) > 2 else "?"
-                    print(f"{Fore.GREEN}[+] {ssid} | {bssid} | CH:{channel}")
+    if pkt.haslayer(Dot11Beacon):
+        bssid = pkt[Dot11].addr2
+        ssid = pkt[Dot11Elt].info.decode(errors='ignore')
+        if ssid and bssid not in self.found_aps:
+            self.found_aps[bssid] = ssid
+            # Safely get channel from Dot11 information elements
+            try:
+                channel = pkt[Dot11Elt:3].channel
+            except:
+                channel = "?"
+            print(f"{Fore.GREEN}[+] {ssid} | {bssid} | CH:{channel}")
         
         try:
             sniff(iface=iface, prn=packet_handler, timeout=timeout)
